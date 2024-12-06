@@ -1,0 +1,104 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+
+// 定义坐标结构体：
+struct Coord {
+    int x;
+    int y;
+};
+
+// 膨胀地图函数：
+std::vector<std::vector<double>> expandMap(const std::vector<std::vector<int>>& grid, double t) {
+    int n = grid.size();
+    int m = grid[0].size();
+    std::vector<std::vector<double>> expandedGrid(n, std::vector<double>(m));
+    //膨胀：
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (i - 1 >= 0) {
+                expandedGrid[i - 1][j] += t * grid[i][j];
+            }
+            if (i + 1 < n) {
+                expandedGrid[i + 1][j] += t * grid[i][j];
+            }
+            if (j - 1 >= 0) {
+                expandedGrid[i][j - 1] += t * grid[i][j];
+            }
+            if (j + 1 < m) {
+                expandedGrid[i][j + 1] += t * grid[i][j];
+            }
+        }
+    }
+    return expandedGrid;
+}
+// 找出最小代价路径函数：
+double findMinCostPath(const std::vector<std::vector<double>>& expandedGrid, Coord start, Coord end) {
+    int n = expandedGrid.size();
+    int m = expandedGrid[0].size();
+    std::vector<std::vector<double>> distances(n, std::vector<double>(m, std::numeric_limits<double>::max()));
+    std::vector<std::vector<bool>> visited(n, std::vector<bool>(m, false));
+    std::queue<Coord> queue;
+
+    distances[start.x][start.y] = 0;
+    queue.push(start);
+
+    while (!queue.empty()) {
+        Coord current = queue.front();
+        queue.pop();
+        visited[current.x][current.y] = true;
+
+        Coord neighbors[4] = { {current.x - 1, current.y}, {current.x + 1, current.y}, {current.x, current.y - 1}, {current.x, current.y + 1} };
+
+        for (const auto& neighbor : neighbors) {
+            if (neighbor.x >= 0 && neighbor.x < n && neighbor.y >= 0 && neighbor.y < m &&!visited[neighbor.x][neighbor.y]) {
+                double cost = expandedGrid[neighbor.x][neighbor.y];
+                double newDistance = distances[current.x][current.y] + cost;
+
+                if (newDistance < distances[neighbor.x][neighbor.y]) {
+                    distances[neighbor.x][neighbor.y] = newDistance;
+                    queue.push(neighbor);
+                }
+            }
+        }
+    }
+
+    return distances[end.x][end.y];
+}
+
+int main() {
+    int n, m;
+    std::cin >> n >> m;
+
+    std::vector<std::vector<int>> grid(n, std::vector<int>(m));
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            std::cin >> grid[i][j];
+        }
+    }
+
+    double t;
+    std::cin >> t;
+
+    int x1, y1, x2, y2;
+    std::cin >> x1 >> y1 >> x2 >> y2;
+
+    Coord start = {x1, y1};
+    Coord end = {x2, y2};
+
+    std::vector<std::vector<double>> expandedGrid = expandMap(grid, t);
+
+    //由于 expandMap 进行了初始化为0，所以expandedGrid计算的只是膨胀大小，现在得到膨胀地图：
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            expandedGrid[i][j] += grid[i][j];
+        }
+    }
+
+    //计算最小代价:
+    double costMin = findMinCostPath(expandedGrid, start, end);
+    std::cout << costMin << std::endl;
+
+    return 0;
+}
